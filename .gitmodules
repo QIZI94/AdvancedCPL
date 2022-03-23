@@ -1,0 +1,3 @@
+[submodule "lib/NamedProperties"]
+	path = lib/NamedProperties
+	url = https://github.com/QIZI94/NamedPropertiesCPP.git
