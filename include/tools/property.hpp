@@ -50,4 +50,6 @@ struct PropertiesHolder{
 	virtual bool presentProperties(const Property::Visitor&) = 0;
 	virtual bool presentProperties(const Property::Visitor&) const = 0;
 };
+
+void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output);
 }}
