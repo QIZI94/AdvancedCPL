@@ -68,9 +68,16 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 	property.read(value);
 
 	auto it = matchAndParse.find(value.type());
-	
 	if(it != matchAndParse.end()){
 		it->second(value, output);
+	}
+	else if(Property::is_any<const PropertiesHolderList>(value)){
+		output.push_back('[');
+		PropertiesToString(Property::cast_any<const PropertiesHolderList&>(value), output, separator);
+		if(output.size() >=  separator.size()){
+			output.erase(output.size() - separator.size(), separator.size());
+		}
+		output.append("]");
 	}
 	else{
 		output.append("unknown");
@@ -78,10 +85,10 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 	output.append(separator);
 }
 
-void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output){
+void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output, std::string separator){
 	nap::Property::Visitor toStringVisitor(
-		[&output](const nap::Property& property){
-			ProeprtyToString(property, output);
+		[&](const nap::Property& property){
+			ProeprtyToString(property, output, separator);
 			return true;
 		}
 	);

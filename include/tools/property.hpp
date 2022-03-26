@@ -51,5 +51,47 @@ struct PropertiesHolder{
 	virtual bool presentProperties(const Property::Visitor&) const = 0;
 };
 
-void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output);
+class PropertiesHolderList : public PropertiesHolder{
+	public:
+	template<typename T>
+	PropertiesHolderList(T& list){
+		anyList = std::make_any<T*>(&list);
+		present = [](const Property::Visitor& visitor, std::any anyList){
+			auto& list = *std::any_cast<T*>(anyList);
+			for(auto propHolder : list){
+				if(!propHolder.presentProperties(visitor)){
+					return false;
+				}
+			}
+			return true;
+		};
+	}
+	template<typename T>
+	PropertiesHolderList(const T& list){
+		list = std::make_any<const T*>(&list);
+		present = [](const Property::Visitor& visitor, std::any anyList){
+			auto& list = *std::any_cast<const T*>(anyList);
+			for(auto propHolder : list){
+				if(!propHolder.presentProperties(visitor)){
+					return false;
+				}
+			}
+			return true;
+		};
+	}
+
+	bool presentProperties(const Property::Visitor& visitor) override{
+		return present(visitor, anyList);
+	}
+	bool presentProperties(const Property::Visitor& visitor) const override{
+		return present(visitor, anyList);
+	}
+
+	private:
+	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
+	PresentFunc_t present;
+	std::any anyList;
+};
+
+void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output, std::string separator = ", ");
 }}

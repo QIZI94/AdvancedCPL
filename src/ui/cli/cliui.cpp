@@ -13,8 +13,8 @@ int main(){
 		module->run();
 
 
-		std::cout<<'\n'<<module->displayName()<<": "<<'\n';
-
+		std::cout<<'\n'<<module->classNameShort()<<": "<<'\n';
+/*
 		tools::Property::Visitor printProperties([](const tools::Property& prop){
 
 			if(prop.isNameOnly()){
@@ -33,8 +33,12 @@ int main(){
 			std::cout<<'\n';
 
 			return true;
-		});
-		module->presentProperties(printProperties);
+		});*/
+
+		/*std::string output;
+		tools::PropertiesToString(*module, output);*/
+		std::cout<<module->toString(",\n\t")<<'\n';
+		//module->presentProperties(printProperties);
 
 	}
 }
