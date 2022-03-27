@@ -8,7 +8,7 @@ using Self = CLASS;\
 using Super = PARENT;\
 auto& self(){ return *this;}\
 auto& super() {return *static_cast<Super*>(this);}\
-std::string_view className() const override{return #CLASS;}
+std::string_view className() const override{using TestType = CLASS;return #CLASS;}
 
 namespace acpl{
 namespace modules{
@@ -18,6 +18,19 @@ struct ModuleComponent : public tools::StateComponent, public tools::PropertiesH
 	COMPONENT_DEF(acpl::modules::shared::ModuleComponent, tools::StateComponent)
 	bool presentProperties(const tools::Property::Visitor&) override{return true;}
 	bool presentProperties(const tools::Property::Visitor&) const override{return true;}
+
+	virtual std::string toString(std::string separator = ", ") const {
+		std::string ret;
+		ret.append(className());
+		
+		ret.append(" {");
+		tools::PropertiesToString(*this, ret, separator);
+		if(ret.size() >=  separator.size()){
+			ret.erase(ret.size() - separator.size(), separator.size());
+		}
+		ret.push_back('}');
+		return ret;
+	}
 };
 
 }}}
