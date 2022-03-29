@@ -13,7 +13,7 @@ int main(){
 		module->run();
 
 
-		std::cout<<'\n'<<module->classNameShort()<<": "<<'\n';
+		std::cout<<module->classNameShort()<<": "<<'\n';
 /*
 		tools::Property::Visitor printProperties([](const tools::Property& prop){
 
@@ -37,7 +37,7 @@ int main(){
 
 		/*std::string output;
 		tools::PropertiesToString(*module, output);*/
-		std::cout<<module->toString(",\n\t")<<'\n';
+		std::cout<<module->toString(", ")<<'\n';
 		//module->presentProperties(printProperties);
 
 	}

@@ -11,37 +11,37 @@ using any_t = Property::any_type;
 using ToStringFunc_t = void(*)(Property::any_type& value, std::string& output);
 
 static std::unordered_map<std::type_index, ToStringFunc_t> matchAndParse{
-	{typeid(bool), [](any_t& value, std::string& output){
+	{typeid(const bool*), [](any_t& value, std::string& output){
 		output.append(Property::cast_any<bool>(value) ? "true" : "false");
 	}},
-	{typeid(int8_t), [](any_t& value, std::string& output){
+	{typeid(const int8_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<int8_t>(value)));
 	}},
-	{typeid(uint8_t), [](any_t& value, std::string& output){
+	{typeid(const uint8_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<uint8_t>(value)));
 	}},
-	{typeid(int16_t), [](any_t& value, std::string& output){
+	{typeid(const int16_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<int16_t>(value)));
 	}},
-	{typeid(uint16_t), [](any_t& value, std::string& output){
+	{typeid(const uint16_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<uint16_t>(value)));
 	}},
-	{typeid(int32_t), [](any_t& value, std::string& output){
+	{typeid(const int32_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<int32_t>(value)));
 	}},
-	{typeid(uint32_t), [](any_t& value, std::string& output){
+	{typeid(const uint32_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<uint32_t>(value)));
 	}},
-	{typeid(int64_t), [](any_t& value, std::string& output){
+	{typeid(const int64_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<int64_t>(value)));
 	}},
-	{typeid(uint64_t), [](any_t& value, std::string& output){
+	{typeid(const uint64_t*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<uint64_t>(value)));
 	}},
-	{typeid(float), [](any_t& value, std::string& output){
+	{typeid(const float*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<float>(value)));
 	}},
-	{typeid(double), [](any_t& value, std::string& output){
+	{typeid(const double*), [](any_t& value, std::string& output){
 		output.append(std::to_string(Property::cast_any<double>(value)));
 	}},
 	{typeid(const std::string_view*), [](any_t& value, std::string& output){
@@ -72,12 +72,28 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 		it->second(value, output);
 	}
 	else if(Property::is_any<const PropertiesHolderList>(value)){
-		output.push_back('[');
+		output.push_back('{');
 		PropertiesToString(Property::cast_any<const PropertiesHolderList&>(value), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
+		output.append("}");
+	}
+	else if(Property::is_any<const PropertyList>(value)){
+		output.push_back('[');
+		PropertiesToString(Property::cast_any<const PropertyList&>(value), output, separator);
+		if(output.size() >=  separator.size()){
+			output.erase(output.size() - separator.size(), separator.size());
+		}
 		output.append("]");
+	}
+	else if(Property::is_any<const PropertiesHolder>(value)){
+		output.push_back('{');
+		PropertiesToString(Property::cast_any<const PropertiesHolder&>(value), output, separator);
+		if(output.size() >=  separator.size()){
+			output.erase(output.size() - separator.size(), separator.size());
+		}
+		output.append("}");
 	}
 	else{
 		output.append("unknown");

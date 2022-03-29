@@ -54,31 +54,74 @@ struct PropertiesHolder{
 class PropertiesHolderList : public PropertiesHolder{
 	public:
 	template<typename T>
-	PropertiesHolderList(T& list){
-		anyList = std::make_any<T*>(&list);
-		present = [](const Property::Visitor& visitor, std::any anyList){
+	PropertiesHolderList(T& list) : anyList(std::make_any<T*>(&list)),
+		present([](const Property::Visitor& visitor, std::any anyList){
 			auto& list = *std::any_cast<T*>(anyList);
-			for(auto propHolder : list){
+			for(auto& propHolder : list){
 				if(!propHolder.presentProperties(visitor)){
 					return false;
 				}
 			}
-			return true;
-		};
-	}
+			return true;}
+		)
+	{}
 	template<typename T>
-	PropertiesHolderList(const T& list){
-		list = std::make_any<const T*>(&list);
-		present = [](const Property::Visitor& visitor, std::any anyList){
-			auto& list = *std::any_cast<const T*>(anyList);
-			for(auto propHolder : list){
+	PropertiesHolderList(const T& list) : anyList(std::make_any<const T*>(&list)),
+		present([](const Property::Visitor& visitor, std::any anyList){
+			const auto& list = *std::any_cast<const T*>(anyList);
+			for(const auto& propHolder : list){
 				if(!propHolder.presentProperties(visitor)){
 					return false;
 				}
 			}
-			return true;
-		};
+			return true;}
+		)
+	{}
+	
+	bool presentProperties(const Property::Visitor& visitor) override{
+		return present(visitor, anyList);
 	}
+	bool presentProperties(const Property::Visitor& visitor) const override{
+		return present(visitor, anyList);
+	}
+
+	private:
+	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
+	PresentFunc_t present;
+	std::any anyList;
+};
+
+class PropertyList : public PropertiesHolder{
+	public:
+	template<typename T>
+	PropertyList(T& list) : anyList(std::make_any<T*>(&list)),
+		present([](const Property::Visitor& visitor, std::any anyList){
+			auto& list = *std::any_cast<T*>(anyList);
+			return Property::Visitor::visit(visitor, list);
+		})
+	{}
+	template<typename T>
+	PropertyList(const T& list) : anyList(std::make_any<const T*>(&list)),
+		present([](const Property::Visitor& visitor, std::any anyList){
+			const auto& list = *std::any_cast<const T*>(anyList);
+			return Property::Visitor::visit(visitor, list);
+		})
+	{}
+
+	PropertyList(std::initializer_list<Property>& ilProperties) : anyList(std::make_any<std::initializer_list<Property>*>(&ilProperties)),
+		present([](const Property::Visitor& visitor, std::any anyList){
+			auto& list = *std::any_cast<std::initializer_list<Property>*>(anyList);
+			return Property::Visitor::visit(visitor, list);
+		})
+	{}
+
+	PropertyList(const std::initializer_list<Property>& ilProperties) : anyList(std::make_any<const std::initializer_list<Property>*>(&ilProperties)),
+		present([](const Property::Visitor& visitor, std::any anyList){
+			const auto& list = *std::any_cast<const std::initializer_list<Property>*>(anyList);
+			return Property::Visitor::visit(visitor, list);
+		})
+	{}
+	
 
 	bool presentProperties(const Property::Visitor& visitor) override{
 		return present(visitor, anyList);
