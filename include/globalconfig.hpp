@@ -1,6 +1,8 @@
 #pragma once
 
-struct GlobalConfig{
+#include "tools/property.hpp"
+namespace acpl{
+struct GlobalConfig : public tools::PropertiesHolder{
 public:
 	static GlobalConfig& Get(){
 		static GlobalConfig globalCfg;
@@ -11,7 +13,14 @@ public:
 	}
 
 public:
-	bool firstTest = false;
+	bool debugging = false;
+	bool debugLog = false;
 
+
+	PROPERTIES_FIRST(
+		tools::Property("Debugging", debugging),
+		tools::Property("Debug Log", debugLog),
+	)
 
 };
+}

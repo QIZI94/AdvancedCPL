@@ -78,8 +78,8 @@ class StateComponent {
 		}
 	}
 
-	void setEssentiality(Essentiality_t esentiality){
-		m_essential = esentiality;
+	void setEssentiality(Essentiality_t essentiality){
+		m_essential = essentiality;
 	}
 
 	Essentiality_t getEsetiality() const{
@@ -298,8 +298,8 @@ struct StateComponentParented : public StateComponent{
 	protected:
 	constexpr StateComponentParented(Parent_t& parent) : parent(&parent){}
 	constexpr StateComponentParented(Parent_t& parent, uint16_t stuckLimit) : parent(&parent), StateComponent(stuckLimit){}
-	constexpr StateComponentParented(Parent_t& parent, Essentiality_t esentiality) : parent(&parent), StateComponent(esentiality){}
-	constexpr StateComponentParented(Parent_t& parent, Essentiality_t esentiality, uint16_t stuckLimit) : parent(&parent), StateComponent(esentiality, stuckLimit){}
+	constexpr StateComponentParented(Parent_t& parent, Essentiality_t essentiality) : parent(&parent), StateComponent(essentiality){}
+	constexpr StateComponentParented(Parent_t& parent, Essentiality_t essentiality, uint16_t stuckLimit) : parent(&parent), StateComponent(essentiality, stuckLimit){}
 	Parent_t& getParent(){
 		return *parent;
 	}
@@ -408,41 +408,50 @@ struct ComponentManager{
 	}
 
 	template<typename COMPONENT>
-	std::vector<ComponentBase_wptr_t> getAllComponents(){
-		std::vector<ComponentBase_wptr_t> ret;
+	std::vector<ComponentBase_wptr_t>& getAllComponents(std::vector<ComponentBase_wptr_t>& compVec){
 		auto it = m_components.begin();
 		while(true){
 			it = std::find_if(it, m_components.end(),[](const ComponentBase_sptr_t& component){
 				return (dynamic_cast<COMPONENT*>(component.get()) != nullptr);
 			});
 			if(it != m_components.end()){
-				ret.emplace_back(*it);
+				compVec.emplace_back(*it);
 				++it;
 			}
 			else{
 				break;
 			}
 		}        
-		return ret;
+		return compVec;
+	}
+	template<typename COMPONENT>
+	std::vector<ComponentBase_wptr_t> getAllComponents(){
+		std::vector<ComponentBase_wptr_t> ret;
+		return getAllComponents<COMPONENT>(ret);
 	}
 
 	template<typename COMPONENT>
-	const std::vector<ConstComponentBase_wptr_t> getAllComponents() const{
-		std::vector<ConstComponentBase_wptr_t> ret;
+	std::vector<ConstComponentBase_wptr_t>& getAllComponents(std::vector<ConstComponentBase_wptr_t>& compVec) const{
 		auto it = m_components.cbegin();
 		while(true){
 			it = std::find_if(it, m_components.cend(),[](const ComponentBase_sptr_t& component){
 				return (dynamic_cast<COMPONENT*>(component.get()) != nullptr);
 			});
 			if(it != m_components.cend()){
-				ret.emplace_back(*it);
+				compVec.emplace_back(*it);
 				++it;
 			}
 			else{
 				break;
 			}
 		}        
-		return ret;
+		return compVec;
+	}
+
+	template<typename COMPONENT>
+	const std::vector<ConstComponentBase_wptr_t> getAllComponents() const{
+		std::vector<ConstComponentBase_wptr_t> ret;
+		return getAllComponents<COMPONENT>(ret);
 	}
 
 	template<typename COMPONENT, size_t N>
@@ -481,6 +490,12 @@ struct ComponentManager{
 			}
 		}        
 		return ret;
+	}
+	std::list<ComponentBase_sptr_t>& getAllComponents(){
+		return m_components;
+	}
+	const std::list<ComponentBase_sptr_t>& getAllComponents() const{
+		return m_components;
 	}
 
 	bool isEmpty() const{
@@ -528,7 +543,7 @@ struct ComponentManager{
 
 	virtual ~ComponentManager(){};
 
-	protected:
+	//protected:
 
 	bool handleComponents(){
 		for(auto it = m_components.begin(); it != m_components.end();){
