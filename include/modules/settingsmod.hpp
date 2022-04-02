@@ -7,7 +7,7 @@ namespace modules{
 class SettingsModule : public shared::Module {
 	public:
 	MODULE_DEF(acpl::modules::SettingsModule, "Settings")
-	PROPERTIES_FIRST_DECL
+	PROPERTIES_DECL
 	SettingsModule();
 	~SettingsModule();
 	bool run() override;

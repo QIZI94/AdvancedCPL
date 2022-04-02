@@ -17,7 +17,7 @@ public:
 	bool debugLog = false;
 
 
-	PROPERTIES_FIRST(
+	PROPERTIES(
 		tools::Property("Debugging", debugging),
 		tools::Property("Debug Log", debugLog),
 	)

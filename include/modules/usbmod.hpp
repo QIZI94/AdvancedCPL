@@ -7,7 +7,7 @@ namespace modules{
 class UsbModule : public shared::Module {
 	public:
 	MODULE_DEF(acpl::modules::UsbModule, "USB")
-	PROPERTIES_FIRST_DECL
+	PROPERTIES_DECL
 
 		
 

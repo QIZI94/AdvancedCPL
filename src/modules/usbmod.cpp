@@ -25,7 +25,7 @@ struct UsbDeviceInfo : public tools::PropertiesHolder{
 	UsbDeviceInfo(const std::string){
 		
 	}
-	PROPERTIES_FIRST(
+	PROPERTIES(
 		Property("Manufacturer", 	Property::ReadOnly(manufacturer)),
 		Property("Product", 		Property::ReadOnly(product)),
 		Property("Vendor ID", 		std::string_view(vendorID, std::strlen(vendorID))),
@@ -36,16 +36,15 @@ struct UsbDeviceInfo : public tools::PropertiesHolder{
 };
 struct Usb : public tools::PropertiesHolder{
 	UsbDeviceInfo deviceInfo;
-	PROPERTIES_FIRST(
+	PROPERTIES(
 		Property("USB Info", (const tools::PropertiesHolder&)deviceInfo),
 	)
 
 };
 
-struct UsbHub : public tools::PropertiesHolder{
+struct UsbHub : public Usb{
 	
-	PROPERTIES_FIRST(
-		Property("HUB Info", (const tools::PropertiesHolder&)deviceInfo),
+	PROPERTIES_EXTEND(Usb,
 		Property("USB Devices", usbListProperties)
 	)
 
@@ -65,7 +64,6 @@ struct UsbHub : public tools::PropertiesHolder{
 		devices = udev_enumerate_get_list_entry(enumerate);
 		
 		/* Create a list of the devices in the 'hidraw' subsystem. */
-		enumerate = udev_enumerate_new(udev);
 		udev_list_entry_foreach(dev_list_entry, devices) {
 			const char *path;
 			
@@ -116,7 +114,7 @@ struct UsbHub : public tools::PropertiesHolder{
 	UsbDeviceInfo deviceInfo;
 };
 
-PROPERTIES_FIRST_IMPL(UsbModule, 
+PROPERTIES_IMPL(UsbModule, 
 	Property("Device Info", (const tools::PropertiesHolder&)UsbHub()),
 )
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "NamedProperties/propertydefaults.hpp"
 
-#define PROPERTIES_FIRST(...) \
+#define PROPERTIES(...) \
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) override{\
 	using namespace acpl::tools;\
 	return Property::Visitor::visit(visitor,{__VA_ARGS__});\
@@ -12,11 +12,11 @@ bool presentProperties(const acpl::tools::Property::Visitor& visitor) const over
 }
 
 
-#define PROPERTIES_FIRST_DECL \
+#define PROPERTIES_DECL \
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) override;\
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) const override;
 
-#define PROPERTIES_FIRST_IMPL(Super, ...) \
+#define PROPERTIES_IMPL(Super, ...) \
 bool Super::presentProperties(const acpl::tools::Property::Visitor& visitor) {\
 	using namespace acpl::tools;\
 	return Property::Visitor::visit(visitor,{__VA_ARGS__});\
@@ -27,17 +27,37 @@ bool Super::presentProperties(const acpl::tools::Property::Visitor& visitor) con
 }
 
 
-#define PROPERTIES(Parent, ...) \
+#define PROPERTIES_EXTEND(Parent, ...) \
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) override{\
    	using namespace acpl::tools;\
-	if(!Parent::presentProeprties()){\
+	if(!Parent::presentProperties(visitor)){\
 		return false;\
 	}\
 	return Property::Visitor::visit(visitor,{__VA_ARGS__});\
 }\
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) const override{\
 	using namespace acpl::tools;\
-	if(!Parent::presentProeprties()){\
+	if(!Parent::presentProperties(visitor)){\
+		return false;\
+	}\
+	return Property::Visitor::visit(visitor,{__VA_ARGS__});\
+}
+
+#define PROPERTIES_EXTEND_DECL \
+bool presentProperties(const acpl::tools::Property::Visitor& visitor) override;\
+bool presentProperties(const acpl::tools::Property::Visitor& visitor) const override;
+
+#define PROPERTIES_EXTEND_IMPL(Super, Parent, ...) \
+bool Super::presentProperties(const acpl::tools::Property::Visitor& visitor) override{\
+   	using namespace acpl::tools;\
+	if(!Parent::presentProperties(visitor)){\
+		return false;\
+	}\
+	return Property::Visitor::visit(visitor,{__VA_ARGS__});\
+}\
+bool Super::presentProperties(const acpl::tools::Property::Visitor& visitor) const override{\
+	using namespace acpl::tools;\
+	if(!Parent::presentProperties(visitor)){\
 		return false;\
 	}\
 	return Property::Visitor::visit(visitor,{__VA_ARGS__});\

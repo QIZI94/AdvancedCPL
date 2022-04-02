@@ -8,7 +8,7 @@ class AboutModule : public shared::Module{
 	MODULE_DEF(acpl::modules::AboutModule, "About")
 	bool run() override { return isAskedToStop();}
 
-	PROPERTIES_FIRST(
+	PROPERTIES(
 		Property("About Module here"),
 		Property("Description: ", std::string_view("Description goes here"))
 	)

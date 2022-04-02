@@ -14,7 +14,7 @@ namespace acpl{
 namespace modules{
 
 static GlobalConfig& GlobalCFG = GlobalConfig::Get();
-PROPERTIES_FIRST_IMPL(SettingsModule, 
+PROPERTIES_IMPL(SettingsModule, 
 	Property("Settings", (tools::PropertiesHolder&)GlobalCFG)
 )
 
