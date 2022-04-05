@@ -4,6 +4,7 @@
 #include "globalconfig.hpp"
 
 #include <iostream>
+#include <map>
 #include <cstring>
 #include <libudev.h>
 
@@ -12,112 +13,102 @@ namespace modules{
 
 static GlobalConfig& GlobalCFG = GlobalConfig::Get();
 
-
 class UsbModule::Manager : public tools::ComponentManager{};
  
 struct UsbDeviceInfo : public tools::PropertiesHolder{
-	std::string manufacturer;
-	std::string product;
-	char vendorID[5] = "";
-	char productID[5] = "";
-	char serialNumber[64] = "";
-	UsbDeviceInfo(){/*delete me later*/}
-	UsbDeviceInfo(const std::string){
-		
-	}
-	PROPERTIES(
-		Property("Manufacturer", 	Property::ReadOnly(manufacturer)),
-		Property("Product", 		Property::ReadOnly(product)),
-		Property("Vendor ID", 		std::string_view(vendorID, std::strlen(vendorID))),
-		Property("Product ID", 		std::string_view(productID, std::strlen(vendorID))),
-		Property("Serial", 			std::string_view(serialNumber, std::strlen(serialNumber))),
-	)
 
+	struct Attribute{
+		Attribute(const std::string& name, const std::string value) : 
+		name(name), value(value)
+		{}
+
+		const std::string name;
+		const std::string value;
+	};
+	void addAttribute(const Attribute& attribute){
+		m_attributes.emplace_back(attribute);
+	}
+	void addAttribute(Attribute&& attribute){
+		m_attributes.emplace_back(attribute);
+	}
+	void addAttribute(const std::string& name, const std::string& value){
+		m_attributes.emplace_back(name, value);
+	}
+	
+	void clear(){
+		m_attributes.clear();
+	}
+
+
+	UsbDeviceInfo(){}
+	bool presentProperties(const acpl::tools::Property::Visitor& visitor) override{
+		const UsbDeviceInfo* constThis = this;
+		return constThis->presentProperties(visitor);
+	}
+	bool presentProperties(const acpl::tools::Property::Visitor& visitor) const override{
+		for(const auto& attribute : m_attributes){
+			tools::Property attrProp(attribute.name, std::string_view(attribute.value));
+			if(visitor.visit(attrProp) == false){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+
+	private:
+	std::vector<Attribute> m_attributes;
+	
 };
 struct Usb : public tools::PropertiesHolder{
+	
 	UsbDeviceInfo deviceInfo;
 	PROPERTIES(
-		Property("USB Info", (const tools::PropertiesHolder&)deviceInfo),
+		Property("Device Info", (const tools::PropertiesHolder&)deviceInfo),
 	)
 
 };
 
 struct UsbHub : public Usb{
-	
+	using UsbList = std::vector<Usb>;
+	using HubMap = std::map<std::string, UsbHub>;
 	PROPERTIES_EXTEND(Usb,
-		Property("USB Devices", usbListProperties)
+		Property("USB Devices", usbListProperties),
+		Property("HUB Devices", tools::PropertiesHolderList(usbHubMap, 
+			UsbHub::presentHubs
+		)),
 	)
-
-	UsbHub(){
-		udev *udev;
-		udev_enumerate *enumerate;
-		udev_list_entry *devices, *dev_list_entry;
-		udev_device *dev;
-		udev = udev_new();
-		if (!udev) {
-			printf("Can't create udev\n");
-			exit(1);
-		}
-		enumerate = udev_enumerate_new(udev);
-		udev_enumerate_add_match_subsystem(enumerate, "hidraw");
-		udev_enumerate_scan_devices(enumerate);
-		devices = udev_enumerate_get_list_entry(enumerate);
-		
-		/* Create a list of the devices in the 'hidraw' subsystem. */
-		udev_list_entry_foreach(dev_list_entry, devices) {
-			const char *path;
-			
-
-			path = udev_list_entry_get_name(dev_list_entry);
-			dev = udev_device_new_from_syspath(udev, path);
-
-			/* usb_device_get_devnode() returns the path to the device node
-				itself in /dev. */
-			//printf("Device Node Path: %s\n", udev_device_get_devnode(dev));
-			dev = udev_device_get_parent_with_subsystem_devtype(
-					dev,
-					"usb",
-					"usb_device");
-			if (!dev) {
-				printf("Unable to find parent usb device.");
-				exit(1);
-			}
-			Usb newDevice;
-			const char* attribute = udev_device_get_sysattr_value(dev,"idVendor");
-			
-			std::strcpy(newDevice.deviceInfo.vendorID, attribute);
-
-			attribute = udev_device_get_sysattr_value(dev, "idProduct");
-			std::strcpy(newDevice.deviceInfo.productID, attribute);
-			
-			attribute = udev_device_get_sysattr_value(dev,"manufacturer");
-			if(attribute){
-				newDevice.deviceInfo.manufacturer = attribute;
-			}
-
-			attribute = udev_device_get_sysattr_value(dev,"product");
-			if(attribute){
-				newDevice.deviceInfo.product = attribute;
-			}
-			
-			attribute = udev_device_get_sysattr_value(dev, "serial");
-			if(attribute){
-				std::strcpy(newDevice.deviceInfo.serialNumber, attribute);
-			}
-			usbList.push_back(newDevice);
-
-			udev_device_unref(dev);
-		}
-	}
-	std::vector<Usb> usbList= {};
+	UsbList usbList;
+	HubMap usbHubMap;
 	tools::PropertiesHolderList usbListProperties = tools::PropertiesHolderList(usbList);
-	UsbDeviceInfo deviceInfo;
+	
+	static bool presentHubs(const tools::Property::Visitor& visitor, std::any anyList){
+		auto& list = *std::any_cast<HubMap*>(anyList);
+		for(auto& pair : list){
+			if(!pair.second.presentProperties(visitor)){
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
-PROPERTIES_IMPL(UsbModule, 
-	Property("Device Info", (const tools::PropertiesHolder&)UsbHub()),
-)
 
+
+bool UsbModule::presentProperties(const acpl::tools::Property::Visitor& visitor) { 
+	using namespace acpl::tools;
+	shared::ComponentPropertiesList componentList(*manager);
+	return Property::Visitor::visit(visitor,{
+		Property("Devices", (tools::PropertiesHolder&)componentList)
+	});
+}
+bool UsbModule::presentProperties(const acpl::tools::Property::Visitor& visitor) const { 
+	using namespace acpl::tools;
+	shared::ComponentPropertiesList componentList(*manager);
+	return Property::Visitor::visit(visitor,{
+		Property("Devices", (const tools::PropertiesHolder&)componentList)
+	});
+}
 
 struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 	DiscoverUsbDevicesComponent() : ModuleComponent(ESSENTIAL){}
@@ -135,17 +126,105 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 	}
 	protected:
 	void start() override {
-		//self_ptr->restart();
+		discoverDevices();
 		std::cout<<"DiscoverUsbDevicesComponent done\n";
 		done();
 	}
 	void run() override {}
 
-	void stop() override {
-		done();
+	PROPERTIES(
+		Property("HUB Devices", tools::PropertiesHolderList(m_usbHubs, UsbHub::presentHubs
+		)),
+	)
+
+	private:
+	struct HubNode{
+		udev_device* dev = nullptr;
+		HubNode* child = nullptr;
+	};
+
+	UsbHub& buildHierarchyFromParents(HubNode* hub){	
+
+		HubNode parentHub;
+		parentHub.child = hub;
+		parentHub.dev = udev_device_get_parent_with_subsystem_devtype(
+			hub->dev,
+			"usb",
+			"usb_device"
+		);
+		if(parentHub.dev != nullptr){
+			return buildHierarchyFromParents(&parentHub);
+		}
+		else{
+			HubNode* currentHub = hub;
+			UsbHub::HubMap* currentHubMap = &m_usbHubs;
+			
+			do{
+				const char* hubPath = udev_device_get_devnode(currentHub->dev);
+				auto it = currentHubMap->find(hubPath);
+				UsbHub& usbHub = (*currentHubMap)[hubPath];
+				if(it == currentHubMap->end()){
+					const char* attribute = nullptr;
+					attribute = udev_device_get_sysattr_value(currentHub->dev, "product");
+					usbHub.deviceInfo.addAttribute("Product", attribute ? attribute : "");
+				}
+				
+				currentHubMap = &usbHub.usbHubMap;
+				currentHub = currentHub->child;
+				
+				if(currentHub == nullptr){
+					return usbHub;
+				}
+			}while(true);
+		}
 	}
 
+	UsbHub& findDeviceParents(udev_device* dev){
 
+		HubNode first;
+
+		first.dev = udev_device_get_parent_with_subsystem_devtype(
+			dev,
+			"usb",
+			"usb_device"
+		);
+		return buildHierarchyFromParents(&first);
+
+	}
+	void discoverDevices(){
+		udev *udev;
+		udev_enumerate *enumerate;
+		udev_list_entry *devices, *dev_entry;
+		udev_device *dev;
+
+		enumerate = udev_enumerate_new(udev);
+		udev_enumerate_add_match_subsystem(enumerate, "hidraw");
+
+		udev_enumerate_scan_devices(enumerate);
+ 		devices = udev_enumerate_get_list_entry(enumerate);
+		m_usbHubs.clear();
+		udev_list_entry_foreach(dev_entry, devices) {
+			const char *path = udev_list_entry_get_name(dev_entry);
+			dev = udev_device_new_from_syspath(udev, path);
+	
+			dev = udev_device_get_parent_with_subsystem_devtype(
+				dev,
+				"usb",
+				"usb_device"
+			);
+			if(dev == nullptr){
+				continue;
+			}
+
+			Usb& newUsb = findDeviceParents(dev).usbList.emplace_back(); //usbHub.usbList.emplace_back();
+			const char* attribute = udev_device_get_sysattr_value(dev, "product");
+			newUsb.deviceInfo.addAttribute("Product", attribute ? attribute : "");			
+		}
+	}
+
+	private:
+
+	UsbHub::HubMap m_usbHubs;
 	
 };
 

@@ -96,4 +96,51 @@ struct ModuleComponentParented : public ModuleComponent{
 	
 };
 
+class ComponentPropertiesList : public tools::PropertiesHolder{
+	public:
+
+	ComponentPropertiesList(tools::ComponentManager& list) : anyList(std::make_any<tools::ComponentManager*>(&list)),
+		present([](const tools::Property::Visitor& visitor, std::any anyList){
+			auto& list = *std::any_cast<tools::ComponentManager*>(anyList);
+			bool visitReturn = true;
+
+			list.visitComponents([&visitor, &visitReturn](tools::StateComponent& component, bool& bContinue){
+					ModuleComponent* withProperties = dynamic_cast<ModuleComponent*>(&component);
+					if(withProperties != nullptr){
+						bContinue = visitReturn = withProperties->presentProperties(visitor);
+					}
+				}
+			);
+			return visitReturn;}
+		)
+	{}
+	ComponentPropertiesList(const tools::ComponentManager& list) : anyList(std::make_any<const tools::ComponentManager*>(&list)),
+		present([](const tools::Property::Visitor& visitor, std::any anyList){
+			const auto& list = *std::any_cast<const tools::ComponentManager*>(anyList);
+			bool visitReturn = true;
+
+			list.visitComponents([&visitor, &visitReturn](tools::StateComponent& component, bool& bContinue){
+					const ModuleComponent* withProperties = dynamic_cast<const ModuleComponent*>(&component);
+					if(withProperties != nullptr){
+						bContinue = visitReturn = withProperties->presentProperties(visitor);
+					}
+				}
+			);
+			return visitReturn;}
+		)
+	{}
+	
+	bool presentProperties(const tools::Property::Visitor& visitor) override{
+		return present(visitor, anyList);
+	}
+	bool presentProperties(const tools::Property::Visitor& visitor) const override{
+		return present(visitor, anyList);
+	}
+
+	private:
+	using PresentFunc_t = bool(*)(const tools::Property::Visitor&, std::any);
+	PresentFunc_t present;
+	std::any anyList;
+};
+
 }}}

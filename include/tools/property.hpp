@@ -73,6 +73,8 @@ struct PropertiesHolder{
 
 class PropertiesHolderList : public PropertiesHolder{
 	public:
+	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
+
 	template<typename T>
 	PropertiesHolderList(T& list) : anyList(std::make_any<T*>(&list)),
 		present([](const Property::Visitor& visitor, std::any anyList){
@@ -98,6 +100,15 @@ class PropertiesHolderList : public PropertiesHolder{
 		)
 	{}
 	
+	template<typename T>
+	PropertiesHolderList(T& list, PresentFunc_t presentFunc) : anyList(std::make_any<T*>(&list)),
+		present(presentFunc)
+	{}
+	template<typename T>
+	PropertiesHolderList(const T& list, PresentFunc_t presentFunc) : anyList(std::make_any<const T*>(&list)),
+		present(presentFunc)
+	{}
+
 	bool presentProperties(const Property::Visitor& visitor) override{
 		return present(visitor, anyList);
 	}
@@ -106,13 +117,14 @@ class PropertiesHolderList : public PropertiesHolder{
 	}
 
 	private:
-	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
 	PresentFunc_t present;
 	std::any anyList;
 };
 
 class PropertyList : public PropertiesHolder{
 	public:
+	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
+
 	template<typename T>
 	PropertyList(T& list) : anyList(std::make_any<T*>(&list)),
 		present([](const Property::Visitor& visitor, std::any anyList){
@@ -151,7 +163,6 @@ class PropertyList : public PropertiesHolder{
 	}
 
 	private:
-	using PresentFunc_t = bool(*)(const Property::Visitor&, std::any);
 	PresentFunc_t present;
 	std::any anyList;
 };

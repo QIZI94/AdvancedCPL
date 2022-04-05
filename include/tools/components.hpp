@@ -504,14 +504,22 @@ struct ComponentManager{
 
 	template<typename Callable>
 	void visitComponents(const Callable& callable){
+		bool bContinue = true;
 		for(auto& comp : m_components){
-			callable(*comp);
+			callable(*comp, bContinue);
+			if(!bContinue){
+				break;
+			}
 		}
 	}
 	template<typename Callable>
 	void visitComponents(const Callable& callable) const{
+		bool bContinue = true;
 		for(const auto& comp : m_components){
-			callable(*comp);
+			callable(*comp, bContinue);
+			if(!bContinue){
+				break;
+			}
 		}
 	}
 
