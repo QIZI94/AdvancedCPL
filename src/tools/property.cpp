@@ -95,6 +95,12 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 		}
 		output.append("}");
 	}
+	else if(Property::is_any<Action&>(value)){
+
+		/*Action& action = Property::cast_any<Action&>(value);
+		action.activate();*/
+		//do nothing
+	}
 	else{
 		output.append("unknown");
 	}

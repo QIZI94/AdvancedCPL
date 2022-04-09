@@ -12,13 +12,19 @@
 
 namespace acpl{
 namespace modules{
+class SettingsModule::Manager : public tools::ComponentManager{};
 
 static GlobalConfig& GlobalCFG = GlobalConfig::Get();
 PROPERTIES_IMPL(SettingsModule, 
-	Property("Settings", (tools::PropertiesHolder&)GlobalCFG)
+	Property("Settings", (tools::PropertiesHolder&)GlobalCFG),
+	Action("Action", [this](){
+		tools::Property::ExecWhenNotConst([](SettingsModule* This){
+			std::cout<<"heyo\n";
+			This->askToStop();
+		},this);
+	})
 )
 
-class SettingsModule::Manager : public tools::ComponentManager{};
  
 
 struct SerializationComponent : public shared::ModuleComponent{

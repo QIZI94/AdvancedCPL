@@ -167,5 +167,35 @@ class PropertyList : public PropertiesHolder{
 	std::any anyList;
 };
 
+class Action{
+
+public:
+	using Action_t = std::function<void()>;
+	Action(Property::string_type name, Action_t actionFunc)
+	: name(name), action(actionFunc)
+	{}
+	Action(Property::string_type name, Property::string_type description, Action_t actionFunc)
+	: name(name), description(description), action(actionFunc)
+	{}
+
+	operator Property(){
+		return Property(name, [this](Property::any_type& output){
+			output = Property::make_any<Action&>(*this);
+		}, nullptr);
+	}
+	operator Property() const{
+		return Property(name);
+	}
+	void activate(){
+		action();
+	}
+	
+private:
+	
+	Property::string_type name;
+	Property::string_type description;
+	Action_t action;
+};
+
 void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output, std::string separator = ", ");
 }}

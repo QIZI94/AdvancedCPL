@@ -21,7 +21,9 @@ struct UsbDeviceInfo : public tools::PropertiesHolder{
 		Attribute(const std::string& name, const std::string value) : 
 		name(name), value(value)
 		{}
-
+		operator tools::Property() const{
+			return tools::Property(name, value);
+		}
 		const std::string name;
 		const std::string value;
 	};
@@ -46,13 +48,7 @@ struct UsbDeviceInfo : public tools::PropertiesHolder{
 		return constThis->presentProperties(visitor);
 	}
 	bool presentProperties(const acpl::tools::Property::Visitor& visitor) const override{
-		for(const auto& attribute : m_attributes){
-			tools::Property attrProp(attribute.name, std::string_view(attribute.value));
-			if(visitor.visit(attrProp) == false){
-				return false;
-			}
-		}
-		return true;
+		return tools::Property::Visitor::visit(visitor, m_attributes);
 	}
 	
 
@@ -143,7 +139,7 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 		HubNode* child = nullptr;
 	};
 
-	UsbHub& buildHierarchyFromParents(HubNode* hub){	
+	UsbHub& buildHierarchyFromParents(HubNode* hub){
 
 		HubNode parentHub;
 		parentHub.child = hub;
@@ -164,9 +160,7 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 				auto it = currentHubMap->find(hubPath);
 				UsbHub& usbHub = (*currentHubMap)[hubPath];
 				if(it == currentHubMap->end()){
-					const char* attribute = nullptr;
-					attribute = udev_device_get_sysattr_value(currentHub->dev, "product");
-					usbHub.deviceInfo.addAttribute("Product", attribute ? attribute : "");
+					gatherDeviceInfo(hub->dev, usbHub.deviceInfo);
 				}
 				
 				currentHubMap = &usbHub.usbHubMap;
@@ -217,8 +211,47 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 			}
 
 			Usb& newUsb = findDeviceParents(dev).usbList.emplace_back(); //usbHub.usbList.emplace_back();
-			const char* attribute = udev_device_get_sysattr_value(dev, "product");
-			newUsb.deviceInfo.addAttribute("Product", attribute ? attribute : "");			
+			gatherDeviceInfo(dev, newUsb.deviceInfo);			
+		}
+	}
+
+
+	static void gatherDeviceInfo(udev_device* device, UsbDeviceInfo& deviceInfo){
+		auto isAttributeIgnored = [](std::string_view attributeName){
+			constexpr auto ignoredAttributes = std::array{
+				std::string_view("product"),
+				std::string_view("manufacturer"),
+				std::string_view("subsystem"),
+				std::string_view("uevent"),
+				std::string_view("descriptors"),
+			};
+			for(const auto& entry : ignoredAttributes){
+				if(entry == attributeName){
+					return true;
+				}
+			}
+			return false;
+		};
+
+		const char* attributeValue = udev_device_get_sysattr_value(device, "product");
+		if(attributeValue != nullptr){
+			deviceInfo.addAttribute("Product",attributeValue);
+		}
+		attributeValue = udev_device_get_sysattr_value(device, "manufacturer");
+		if(attributeValue != nullptr){
+			deviceInfo.addAttribute("Manufacturer", attributeValue);
+		}
+
+		udev_list_entry* attributeEntry = nullptr;
+		udev_list_entry_foreach(attributeEntry, udev_device_get_sysattr_list_entry(device)){
+			const char* attributeName = udev_list_entry_get_name(attributeEntry);
+			if(isAttributeIgnored(attributeName)){
+				continue;
+			}
+			attributeValue 	= udev_device_get_sysattr_value(device, attributeName);
+			if(attributeName != nullptr && attributeValue != nullptr){
+				deviceInfo.addAttribute(attributeName, attributeValue);
+			}
 		}
 	}
 
