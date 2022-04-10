@@ -180,7 +180,7 @@ public:
 
 	operator Property(){
 		return Property(name, [this](Property::any_type& output){
-			output = Property::make_any<Action&>(*this);
+			output = Property::interface::make_any<Action&>(*this);
 		}, nullptr);
 	}
 	operator Property() const{

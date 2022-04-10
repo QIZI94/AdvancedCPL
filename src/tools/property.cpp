@@ -12,43 +12,43 @@ using ToStringFunc_t = void(*)(Property::any_type& value, std::string& output);
 
 static std::unordered_map<std::type_index, ToStringFunc_t> matchAndParse{
 	{typeid(const bool*), [](any_t& value, std::string& output){
-		output.append(Property::cast_any<bool>(value) ? "true" : "false");
+		output.append(Property::interface::cast_any<bool>(value) ? "true" : "false");
 	}},
 	{typeid(const int8_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<int8_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<int8_t>(value)));
 	}},
 	{typeid(const uint8_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<uint8_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<uint8_t>(value)));
 	}},
 	{typeid(const int16_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<int16_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<int16_t>(value)));
 	}},
 	{typeid(const uint16_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<uint16_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<uint16_t>(value)));
 	}},
 	{typeid(const int32_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<int32_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<int32_t>(value)));
 	}},
 	{typeid(const uint32_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<uint32_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<uint32_t>(value)));
 	}},
 	{typeid(const int64_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<int64_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<int64_t>(value)));
 	}},
 	{typeid(const uint64_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<uint64_t>(value)));
+		output.append(std::to_string(Property::interface::cast_any<uint64_t>(value)));
 	}},
 	{typeid(const float*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<float>(value)));
+		output.append(std::to_string(Property::interface::cast_any<float>(value)));
 	}},
 	{typeid(const double*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::cast_any<double>(value)));
+		output.append(std::to_string(Property::interface::cast_any<double>(value)));
 	}},
 	{typeid(const std::string_view*), [](any_t& value, std::string& output){
-		output.append(Property::cast_any<const std::string_view&>(value));
+		output.append(Property::interface::cast_any<const std::string_view&>(value));
 	}},
 	{typeid(const std::string*), [](any_t& value, std::string& output){
-		output.append(Property::cast_any<const std::string&>(value));
+		output.append(Property::interface::cast_any<const std::string&>(value));
 	}},
 };
 
@@ -71,31 +71,31 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 	if(it != matchAndParse.end()){
 		it->second(value, output);
 	}
-	else if(Property::is_any<const PropertiesHolderList>(value)){
+	else if(Property::interface::is_any<const PropertiesHolderList>(value)){
 		output.push_back('{');
-		PropertiesToString(Property::cast_any<const PropertiesHolderList&>(value), output, separator);
+		PropertiesToString(Property::interface::cast_any<const PropertiesHolderList&>(value), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("}");
 	}
-	else if(Property::is_any<const PropertyList>(value)){
+	else if(Property::interface::is_any<const PropertyList>(value)){
 		output.push_back('[');
-		PropertiesToString(Property::cast_any<const PropertyList&>(value), output, separator);
+		PropertiesToString(Property::interface::cast_any<const PropertyList&>(value), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("]");
 	}
-	else if(Property::is_any<const PropertiesHolder>(value)){
+	else if(Property::interface::is_any<const PropertiesHolder>(value)){
 		output.push_back('{');
-		PropertiesToString(Property::cast_any<const PropertiesHolder&>(value), output, separator);
+		PropertiesToString(Property::interface::cast_any<const PropertiesHolder&>(value), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("}");
 	}
-	else if(Property::is_any<Action&>(value)){
+	else if(Property::interface::is_any<Action&>(value)){
 
 		/*Action& action = Property::cast_any<Action&>(value);
 		action.activate();*/
