@@ -1,5 +1,5 @@
 #pragma once
-#include "NamedProperties/propertydefaults.hpp"
+#include "property_impl.hpp"
 
 #define PROPERTIES(...) \
 bool presentProperties(const acpl::tools::Property::Visitor& visitor) override{\
@@ -65,7 +65,7 @@ bool Super::presentProperties(const acpl::tools::Property::Visitor& visitor) con
 
 namespace acpl{
 namespace tools{
-using Property = nap::Property;
+using Property = nap::PropertyTemplate<detail::AcplInterface>;
 struct PropertiesHolder{
 	virtual bool presentProperties(const Property::Visitor&) = 0;
 	virtual bool presentProperties(const Property::Visitor&) const = 0;
@@ -180,7 +180,7 @@ public:
 
 	operator Property(){
 		return Property(name, [this](Property::any_type& output){
-			output = Property::interface::make_any<Action&>(*this);
+			output = Property::any_type::make<Action&>(*this);
 		}, nullptr);
 	}
 	operator Property() const{

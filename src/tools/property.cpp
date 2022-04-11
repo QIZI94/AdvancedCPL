@@ -9,46 +9,47 @@ namespace tools{
 
 using any_t = Property::any_type;
 using ToStringFunc_t = void(*)(Property::any_type& value, std::string& output);
+using propint = Property::interface;
 
 static std::unordered_map<std::type_index, ToStringFunc_t> matchAndParse{
-	{typeid(const bool*), [](any_t& value, std::string& output){
-		output.append(Property::interface::cast_any<bool>(value) ? "true" : "false");
+	{typeid(propint::internal_type<const bool>), [](any_t& value, std::string& output){
+		output.append(value.cast<bool>() ? "true" : "false");
 	}},
-	{typeid(const int8_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<int8_t>(value)));
+	{typeid(propint::internal_type<const int8_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<int8_t>()));
 	}},
-	{typeid(const uint8_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<uint8_t>(value)));
+	{typeid(propint::internal_type<const uint8_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<uint8_t>()));
 	}},
-	{typeid(const int16_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<int16_t>(value)));
+	{typeid(propint::internal_type<const int16_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<int16_t>()));
 	}},
-	{typeid(const uint16_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<uint16_t>(value)));
+	{typeid(propint::internal_type<const uint16_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<uint16_t>()));
 	}},
-	{typeid(const int32_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<int32_t>(value)));
+	{typeid(propint::internal_type<const int32_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<int32_t>()));
 	}},
-	{typeid(const uint32_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<uint32_t>(value)));
+	{typeid(propint::internal_type<const uint32_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<uint32_t>()));
 	}},
-	{typeid(const int64_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<int64_t>(value)));
+	{typeid(propint::internal_type<const int64_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<int64_t>()));
 	}},
-	{typeid(const uint64_t*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<uint64_t>(value)));
+	{typeid(propint::internal_type<const uint64_t>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<uint64_t>()));
 	}},
-	{typeid(const float*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<float>(value)));
+	{typeid(propint::internal_type<const float>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<float>()));
 	}},
-	{typeid(const double*), [](any_t& value, std::string& output){
-		output.append(std::to_string(Property::interface::cast_any<double>(value)));
+	{typeid(propint::internal_type<const double>), [](any_t& value, std::string& output){
+		output.append(std::to_string(value.cast<double>()));
 	}},
-	{typeid(const std::string_view*), [](any_t& value, std::string& output){
-		output.append(Property::interface::cast_any<const std::string_view&>(value));
+	{typeid(propint::internal_type<const std::string_view>), [](any_t& value, std::string& output){
+		output.append(value.cast<const std::string_view&>());
 	}},
-	{typeid(const std::string*), [](any_t& value, std::string& output){
-		output.append(Property::interface::cast_any<const std::string&>(value));
+	{typeid(propint::internal_type<const std::string>), [](any_t& value, std::string& output){
+		output.append(value.cast<const std::string&>());
 	}},
 };
 
@@ -67,35 +68,35 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 	Property::any_type value;
 	property.read(value);
 
-	auto it = matchAndParse.find(value.type());
+	auto it = matchAndParse.find(value.any.type());
 	if(it != matchAndParse.end()){
 		it->second(value, output);
 	}
-	else if(Property::interface::is_any<const PropertiesHolderList>(value)){
+	else if(value.is_type<const PropertiesHolderList>()){
 		output.push_back('{');
-		PropertiesToString(Property::interface::cast_any<const PropertiesHolderList&>(value), output, separator);
+		PropertiesToString(value.cast<const PropertiesHolderList&>(), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("}");
 	}
-	else if(Property::interface::is_any<const PropertyList>(value)){
+	else if(value.is_type<const PropertyList>()){
 		output.push_back('[');
-		PropertiesToString(Property::interface::cast_any<const PropertyList&>(value), output, separator);
+		PropertiesToString(value.cast<const PropertyList&>(), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("]");
 	}
-	else if(Property::interface::is_any<const PropertiesHolder>(value)){
+	else if(value.is_type<const PropertiesHolder>()){
 		output.push_back('{');
-		PropertiesToString(Property::interface::cast_any<const PropertiesHolder&>(value), output, separator);
+		PropertiesToString(value.cast<const PropertiesHolder&>(), output, separator);
 		if(output.size() >=  separator.size()){
 			output.erase(output.size() - separator.size(), separator.size());
 		}
 		output.append("}");
 	}
-	else if(Property::interface::is_any<Action&>(value)){
+	else if(value.is_type<Action&>()){
 
 		/*Action& action = Property::cast_any<Action&>(value);
 		action.activate();*/
@@ -108,8 +109,8 @@ static void ProeprtyToString(const Property& property, std::string& output, cons
 }
 
 void PropertiesToString(const PropertiesHolder& propertyHolder, std::string& output, std::string separator){
-	nap::Property::Visitor toStringVisitor(
-		[&](const nap::Property& property){
+	Property::Visitor toStringVisitor(
+		[&](const Property& property){
 			ProeprtyToString(property, output, separator);
 			return true;
 		}
