@@ -12,7 +12,6 @@
 
 namespace acpl{
 namespace modules{
-class SettingsModule::Manager : public tools::ComponentManager{};
 
 static GlobalConfig& GlobalCFG = GlobalConfig::Get();
 PROPERTIES_IMPL(SettingsModule, 
@@ -77,8 +76,8 @@ struct SettingsModule::MainComponent : public shared::ModuleComponentParented<Se
 	MainComponent(Parent_t& parent) : ModuleComponentParented(parent, ESSENTIAL){}
 	void start() override {
 		if(serializationComponent.expired()){
-			serializationComponent = getParent().manager->addComponent<SerializationComponent>();
-			serializationReloadTimer = getParent().manager->addComponent<tools::TimerComponent>(
+			serializationComponent = getParent().getComponentManager().addComponent<SerializationComponent>();
+			serializationReloadTimer = getParent().getComponentManager().addComponent<tools::TimerComponent>(
 				serializationComponent,
 				SerializationComponent::timedReload,
 				1000
@@ -104,15 +103,10 @@ struct SettingsModule::MainComponent : public shared::ModuleComponentParented<Se
 
 
 SettingsModule::SettingsModule(){
-	manager = std::make_unique<Manager>();
-	manager->addComponent<MainComponent>(*this);
+	
+	getComponentManager().addComponent<MainComponent>(*this);
 }
-SettingsModule::~SettingsModule(){}
 
-
-bool SettingsModule::run(){
-	return manager->handleComponents();
-}
 
 
 

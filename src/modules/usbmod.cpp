@@ -12,9 +12,6 @@ namespace acpl{
 namespace modules{
 
 static GlobalConfig& GlobalCFG = GlobalConfig::Get();
-
-class UsbModule::Manager : public tools::ComponentManager{};
- 
 struct UsbDeviceInfo : public tools::PropertiesHolder{
 
 	struct Attribute{
@@ -70,41 +67,36 @@ struct UsbHub : public Usb{
 	using HubMap = std::map<std::string, UsbHub>;
 	PROPERTIES_EXTEND(Usb,
 		Property("USB Devices", usbListProperties),
-		Property("HUB Devices", tools::PropertiesHolderList(usbHubMap, 
-			UsbHub::presentHubs
-		)),
+		Property("HUB Devices", hubListProperties),
 	)
 	UsbList usbList;
 	HubMap usbHubMap;
 	tools::PropertiesHolderList usbListProperties = tools::PropertiesHolderList(usbList);
+	tools::PropertiesHolderList hubListProperties = tools::PropertiesHolderList(usbHubMap, UsbHub::presentHubs);
 	
 	static bool presentHubs(const tools::Property::Visitor& visitor, std::any anyList){
-		auto& list = *std::any_cast<HubMap*>(anyList);
-		for(auto& pair : list){
-			if(!pair.second.presentProperties(visitor)){
-				return false;
+		if(anyList.type() == typeid(const HubMap*)){
+			const auto& list = *std::any_cast<const HubMap*>(anyList);
+			for(auto& pair : list){
+				if(!pair.second.presentProperties(visitor)){
+					return false;
+				}
 			}
 		}
+		else{
+			auto& list = *std::any_cast<HubMap*>(anyList);
+			for(auto& pair : list){
+				if(!pair.second.presentProperties(visitor)){
+					return false;
+				}
+			}
+		}
+
+
+
 		return true;
 	}
 };
-
-
-
-bool UsbModule::presentProperties(const acpl::tools::Property::Visitor& visitor) { 
-	using namespace acpl::tools;
-	shared::ComponentPropertiesList componentList(*manager);
-	return Property::Visitor::visit(visitor,{
-		Property("Devices", (tools::PropertiesHolder&)componentList)
-	});
-}
-bool UsbModule::presentProperties(const acpl::tools::Property::Visitor& visitor) const { 
-	using namespace acpl::tools;
-	shared::ComponentPropertiesList componentList(*manager);
-	return Property::Visitor::visit(visitor,{
-		Property("Devices", (const tools::PropertiesHolder&)componentList)
-	});
-}
 
 struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 	DiscoverUsbDevicesComponent() : ModuleComponent(ESSENTIAL){}
@@ -129,8 +121,7 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 	void run() override {}
 
 	PROPERTIES(
-		Property("HUB Devices", tools::PropertiesHolderList(m_usbHubs, UsbHub::presentHubs
-		)),
+		Property("HUB Devices", tools::PropertiesHolderList(m_usbHubs, UsbHub::presentHubs)),
 	)
 
 	private:
@@ -267,14 +258,13 @@ struct UsbModule::MainComponent : public shared::ModuleComponentParented<UsbModu
 	MainComponent(Parent_t& parent) : ModuleComponentParented(parent, ESSENTIAL){}
 	void start() override {
 		if(discoverUsbDevicesComponent.expired()){
-			discoverUsbDevicesComponent = getParent().manager->addComponent<DiscoverUsbDevicesComponent>();
-			discoverUsbReloadTimer = getParent().manager->addComponent<tools::TimerComponent>(
+			discoverUsbDevicesComponent = getParent().getComponentManager().addComponent<DiscoverUsbDevicesComponent>();
+			discoverUsbReloadTimer = getParent().getComponentManager().addComponent<tools::TimerComponent>(
 				discoverUsbDevicesComponent,
 				DiscoverUsbDevicesComponent::timedReload,
 				1000
 			);
 
-			
 			//auto self_ptr = findSelf<MainComponent>(*getParent().manager).lock();
 		}
 		std::cout<<"MainComponent done\n";
@@ -293,16 +283,7 @@ struct UsbModule::MainComponent : public shared::ModuleComponentParented<UsbModu
 
 
 UsbModule::UsbModule(){
-	manager = std::make_unique<Manager>();
-	manager->addComponent<MainComponent>(*this);
+	getComponentManager().addComponent<MainComponent>(*this);
 }
-UsbModule::~UsbModule(){}
-
-
-bool UsbModule::run(){
-	return manager->handleComponents();
-}
-
-
 
 }}

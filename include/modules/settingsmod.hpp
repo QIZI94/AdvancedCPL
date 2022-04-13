@@ -9,14 +9,10 @@ class SettingsModule : public shared::Module {
 	MODULE_DEF(acpl::modules::SettingsModule, "Settings")
 	PROPERTIES_DECL
 	SettingsModule();
-	~SettingsModule();
-	bool run() override;
 	
 	private:
 	class Manager;
 	class MainComponent;
-	std::unique_ptr<Manager> manager;
-
 
 };
 
