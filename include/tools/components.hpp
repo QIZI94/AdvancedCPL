@@ -32,8 +32,20 @@ class StateComponent {
 	 * @return true, when internal state is still in progress, otherwise false.
 	 * @note This function return the same boolian value as operator(), but doesn't execute any active state.
 	 **/
-	bool isActive(){
+	bool isActive() const{
 		return (m_state != INVALID_STATE);
+	}
+	bool isStarting(){
+		return (m_state == START);
+	}
+	bool isRunning() const{
+		return (m_state == RUNNING);
+	}
+	bool isStopping() const{
+		return (m_state == STOP);
+	}
+	bool isRestarting() const{
+		return (m_state == RESTART);
 	}
 
 	/**
@@ -42,9 +54,6 @@ class StateComponent {
 	 **/
 	void restart(){
 		if(isActive() && !isRestarting()){
-			/*if(thisDebuging()){
-				std::cerr<<"\033[1;35mStateComponent "<<getClassName()<<" initiating restart.\n";
-			}*/
 			reset_stuckCountdown();
 			reset_result();
 			m_previousResult = DONE;
@@ -76,6 +85,10 @@ class StateComponent {
 			m_previousResult = DONE;
 			m_state = STOP;
 		}
+	}
+
+	Result_t getLastResult() const{
+		return m_previousResult;
 	}
 
 	void setEssentiality(Essentiality_t essentiality){
@@ -118,6 +131,9 @@ class StateComponent {
 		return *this;
 	}
 
+
+	virtual void onStateFinish(){}
+
 	
 
 	virtual ~StateComponent(){}
@@ -154,14 +170,6 @@ class StateComponent {
 			m_currentResult = FAIL;
 		}
 	}
-
-	Result_t getLastResult() const{
-		return m_previousResult;
-	}
-
-	bool isRestarting() const{
-		return (m_state == RESTART);
-	}
 	
 	virtual void start(){done();}
 	virtual void run(){done();}
@@ -176,20 +184,16 @@ class StateComponent {
 			break;
 				
 			case DONE: 
-				/*if(thisDebuging()){
-					std::cerr<<"\033[1;32mStateComponent "<<getClassName()<<" done starting.\033[0m\n";
-				}*/
 				m_previousResult = m_currentResult;
+				onStateFinish();
 				reset_stuckCountdown();
 				reset_result();
 				m_state  = RUNNING;
 			break; 
 
 			case FAIL: 
-				/*if(thisDebuging()){
-					std::cerr<<"\033[1;31mStateComponent "<<getClassName()<<" failed to start.\033[0m\n";
-				}*/
 				m_previousResult = m_currentResult;
+				onStateFinish();
 				reset_stuckCountdown();
 				reset_result();
 				m_state = STOP;
@@ -205,16 +209,8 @@ class StateComponent {
 
 			case DONE: 
 			case FAIL: 
-				/*if(thisDebuging()){
-					if(m_currentResult == DONE){
-						std::cerr<<"\033[1;34mStateComponent "<<getClassName()<<" is done running.\033[0m\n";
-						
-					}
-					else if(m_currentResult == FAIL){
-						std::cerr<<"\033[1;31mStateComponent "<<getClassName()<<" failed while running.\033[0m\n";
-					}
-				}*/
 				m_previousResult = m_currentResult;
+				onStateFinish();
 				reset_stuckCountdown();
 				reset_result();
 				m_state  = STOP;
@@ -232,15 +228,8 @@ class StateComponent {
 
 			case DONE:
 			case FAIL:
-				/*if(thisDebuging()){
-					if(m_currentResult == DONE){
-						std::cerr<<"\033[1;33mStateComponent "<<getClassName()<<" done stopping.\033[0m\n";
-					}
-					else if(m_currentResult == FAIL){
-						std::cerr<<"\033[1;31mStateComponent "<<getClassName()<<" failed to stop.\033[0m\n";
-					}
-				} */
 				m_previousResult = m_currentResult;
+				onStateFinish();
 				if(m_state == RESTART){
 					reset_stuckCountdown();
 					reset_result();

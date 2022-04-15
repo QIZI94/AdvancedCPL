@@ -91,9 +91,6 @@ struct UsbHub : public Usb{
 				}
 			}
 		}
-
-
-
 		return true;
 	}
 };
@@ -115,7 +112,6 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 	protected:
 	void start() override {
 		discoverDevices();
-		std::cout<<"DiscoverUsbDevicesComponent done\n";
 		done();
 	}
 	void run() override {}
@@ -254,7 +250,7 @@ struct DiscoverUsbDevicesComponent : public shared::ModuleComponent{
 
 
 struct UsbModule::MainComponent : public shared::ModuleComponentParented<UsbModule>{
-	COMPONENT_DEF(acpl::modules::DiscoverUsbDevicesComponent, ModuleComponentParented)
+	COMPONENT_DEF(acpl::modules::UsbModule::MainComponent, ModuleComponentParented)
 	MainComponent(Parent_t& parent) : ModuleComponentParented(parent, ESSENTIAL){}
 	void start() override {
 		if(discoverUsbDevicesComponent.expired()){
@@ -267,7 +263,6 @@ struct UsbModule::MainComponent : public shared::ModuleComponentParented<UsbModu
 
 			//auto self_ptr = findSelf<MainComponent>(*getParent().manager).lock();
 		}
-		std::cout<<"MainComponent done\n";
 		done();
 	}
 	void run() override{}

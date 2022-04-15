@@ -2,6 +2,7 @@
 #include "tools/property.hpp"
 #include "tools/classinfo.hpp"
 #include "tools/components.hpp"
+#include <iostream>
 
 #define COMPONENT_DEF(CLASS, PARENT)\
 using Self = CLASS;\
@@ -69,6 +70,43 @@ struct ModuleComponent : public tools::StateComponent, public tools::PropertiesH
 		}
 		ret.push_back('}');
 		return ret;
+	}
+
+	void onStateFinish() override{
+
+		if(isRestarting()){
+			if(getLastResult() == DONE){
+				std::cerr<<"\033[1;35mModuleComponent "<<className()<<" done restaring.\033[0m\n";
+			}
+			else if(getLastResult() == FAIL){
+				std::cerr<<"\033[1;31mModuleComponent "<<className()<<" failed while restarting.\033[0m\n";
+			}
+		}
+		else if(isStarting()){
+			
+			if(getLastResult() == DONE){
+				std::cerr<<"\033[1;32mModuleComponent "<<className()<<" done starting.\033[0m\n";
+			}
+			else if(getLastResult() == FAIL){
+				std::cerr<<"\033[1;31mModuleComponent "<<className()<<" failed while starting.\033[0m\n";
+			}
+		}
+		else if(isRunning()){
+			if(getLastResult() == DONE){
+				std::cerr<<"\033[1;32mModuleComponent "<<className()<<" done running.\033[0m\n";
+			}
+			else if(getLastResult() == FAIL){
+				std::cerr<<"\033[1;31mModuleComponent "<<className()<<" failed while running.\033[0m\n";
+			}
+		}
+		else if(isStopping()){
+			if(getLastResult() == DONE){
+				std::cerr<<"\033[1;32mModuleComponent "<<className()<<" done stopping.\033[0m\n";
+			}
+			else if(getLastResult() == FAIL){
+				std::cerr<<"\033[1;31mModuleComponent "<<className()<<" failed while stopping.\033[0m\n";
+			}
+		}
 	}
 };
 template <typename Parent>

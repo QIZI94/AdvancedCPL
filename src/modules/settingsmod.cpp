@@ -26,14 +26,15 @@ PROPERTIES_IMPL(SettingsModule,
 
  
 
-struct SerializationComponent : public shared::ModuleComponent{
-	SerializationComponent() : ModuleComponent(ESSENTIAL){}
+struct SettingsSerializationComponent : public shared::ModuleComponent{
+	COMPONENT_DEF(acpl::modules::SettingsSerializationComponent, ModuleComponent)
+	SettingsSerializationComponent() : ModuleComponent(ESSENTIAL){}
 	static void timedReload(tools::TimerComponent::ComponentWeak_t& serializationComponent, tools::TimerComponent& timer){
 		if(serializationComponent.expired()){
 			return;
 		}
 
-		if(auto This = std::dynamic_pointer_cast<SerializationComponent>(serializationComponent.lock())){
+		if(auto This = std::dynamic_pointer_cast<SettingsSerializationComponent>(serializationComponent.lock())){
 			This->restart();
 			timer.restart();
 		}
@@ -55,9 +56,6 @@ struct SerializationComponent : public shared::ModuleComponent{
 		tools::PropertiesToString(GlobalCFG,content);
 		std::ofstream(settingsPath)<<content<<(counter++);
 		
-		
-		//self_ptr->restart();
-		std::cout<<"SerializationComponent done\n";
 		done();
 	}
 	void run() override {}
@@ -76,17 +74,16 @@ struct SettingsModule::MainComponent : public shared::ModuleComponentParented<Se
 	MainComponent(Parent_t& parent) : ModuleComponentParented(parent, ESSENTIAL){}
 	void start() override {
 		if(serializationComponent.expired()){
-			serializationComponent = getParent().getComponentManager().addComponent<SerializationComponent>();
+			serializationComponent = getParent().getComponentManager().addComponent<SettingsSerializationComponent>();
 			serializationReloadTimer = getParent().getComponentManager().addComponent<tools::TimerComponent>(
 				serializationComponent,
-				SerializationComponent::timedReload,
+				SettingsSerializationComponent::timedReload,
 				1000
 			);
 
 			
 			//auto self_ptr = findSelf<MainComponent>(*getParent().manager).lock();
 		}
-		std::cout<<"MainComponent done\n";
 		done();
 	}
 	protected:
@@ -97,7 +94,7 @@ struct SettingsModule::MainComponent : public shared::ModuleComponentParented<Se
 		done();
 	}
 
-	std::weak_ptr<SerializationComponent> serializationComponent;
+	std::weak_ptr<SettingsSerializationComponent> serializationComponent;
 	std::weak_ptr<tools::TimerComponent> serializationReloadTimer;
 };
 
