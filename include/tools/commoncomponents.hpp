@@ -28,13 +28,10 @@ protected:
 		using namespace std::chrono;
 		auto now = steady_clock::now();
 
-		if(duration_cast<milliseconds>(now - m_lastTime).count() >= m_timedMiliseconds){			
+		if(duration_cast<milliseconds>(now - m_lastTime).count() >= m_timedMiliseconds){
+			m_timerFunction(m_component, *this);	
 			done();
 		}
-	}
-	void stop() override {
-		m_timerFunction(m_component, *this);
-		done();
 	}
 
 private:

@@ -35,7 +35,7 @@ class StateComponent {
 	bool isActive() const{
 		return (m_state != INVALID_STATE);
 	}
-	bool isStarting(){
+	bool isStarting() const{
 		return (m_state == START);
 	}
 	bool isRunning() const{
