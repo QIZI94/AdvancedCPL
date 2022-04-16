@@ -1,6 +1,7 @@
 #pragma once
 #include <string_view>
 #include <vector>
+#include <map>
 
 #include "tools/components.hpp"
 #include "tools/property.hpp"
@@ -67,9 +68,48 @@ struct Module : public tools::PropertiesHolder, public tools::ClassInfo{
 		return m_componentManager;
 	}
 
+	void collectReprots(const ReprotVisitor& visitor) const override{
+		for(auto& uniqueReprot : m_uniqueReports){
+			visitor(uniqueReprot.second);
+		}
+	}
+
+	void clearReprots() override{
+		m_uniqueReports.clear();
+	}
+	void report(tools::Report&& moveReprot) override{
+		if(m_uniqueReports.find(moveReprot.wholeMessage()) == m_uniqueReports.end()){
+			m_uniqueReports.emplace(moveReprot.wholeMessage(), moveReprot);
+		}
+	}
+	void report(const tools::Report& copyReport) override{
+		if(m_uniqueReports.find(copyReport.wholeMessage()) == m_uniqueReports.end()){
+			tools::Report localReport = copyReport;
+			m_uniqueReports.emplace(localReport.wholeMessage(), std::move(localReport));
+		}
+	}
+
+
+	void reportNotification(std::string_view description, std::string_view callstack = {}){
+		tools::Report notification = tools::Report::Notification(description, className(), callstack);
+		report(std::move(notification));
+	}
+
+	void reportWarning(std::string_view description, std::string_view callstack = {}){
+		tools::Report warning = tools::Report::Warning(description, className(), callstack);
+		report(std::move(warning));
+	}
+	
+	void reportError(std::string_view description, std::string_view callstack = {}){
+		tools::Report error = tools::Report::Error(description, className(), callstack);
+		report(std::move(error));
+	}
+
+
 	private:
 	bool m_askToStop = false;
 	tools::ComponentManager m_componentManager;
+	std::map<std::string_view, tools::Report> m_uniqueReports; 
 };
 
 }}}
